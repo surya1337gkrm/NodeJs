@@ -1,13 +1,14 @@
-const app = require('express')();
+const express = require('express');
+const path = require('path');
+const app = express();
+app.use(express.static(path.join(__dirname, 'public')));
 
-
-app.use('/add-product', (req, res, next) => {
-  res.send('Response from users');
+app.use('/users', (req, res, next) => {
+  res.sendFile(path.join(__dirname, 'views', 'main.html'));
 });
 
 app.use('/', (req, res, next) => {
-  console.log('Root Route');
-  res.send('<h1>Root Route</h1>');
+  res.sendFile(path.join(__dirname, 'views', 'main.html'));
 });
 
 app.listen(3000, () => {
