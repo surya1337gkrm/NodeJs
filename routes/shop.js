@@ -10,7 +10,9 @@ router.get('/', (req, res, next) => {
   const products = adminData.products;
   //instead of sending html, we need to use template we defined, use res.render() method
   //and also pass the data to the template to use them in the template
-  res.render('shop', { prods: products, docTitle: 'Shop' });
+
+  //use path variable to dynamically add active class to the hrefs
+  res.render('shop', { prods: products, pageTitle: 'Shop',path:'/' });
 });
 
 module.exports = router;
