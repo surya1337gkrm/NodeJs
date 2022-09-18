@@ -1,11 +1,22 @@
 const express = require('express');
 const adminData = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
+const expressHbs = require('express-handlebars');
 
 const app = express();
 
-//to use aby dynamic html template engines, we need to set the engine name in the config.
-app.set('view engine', 'pug');
+//to use handlebars we need to set the engine first unlike pug
+app.engine(
+  'hbs',
+  expressHbs({
+    layoutsDir: 'views/layouts/',
+    defaultLayout: 'mainLayout',
+    extname: 'hbs',
+  })
+);
+
+//to use a dynamic html template engines, we need to set the engine name in the config.
+app.set('view engine', 'hbs');
 /*express will check for views/templates in the views directory but
 if there's no views directory or with another name
 add the directory where we stored the templates*/

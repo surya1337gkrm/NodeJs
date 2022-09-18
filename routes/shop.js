@@ -12,7 +12,14 @@ router.get('/', (req, res, next) => {
   //and also pass the data to the template to use them in the template
 
   //use path variable to dynamically add active class to the hrefs
-  res.render('shop', { prods: products, pageTitle: 'Shop',path:'/' });
+  res.render('shop', {
+    prods: products,
+    pageTitle: 'Shop',
+    path: '/',
+    hasProducts: products.length > 0,
+    activeShop: true,
+    productCSS: true,
+  });
 });
 
 module.exports = router;
