@@ -1,7 +1,9 @@
 const express = require('express');
-const adminData = require('./routes/admin');
+const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 //const expressHbs = require('express-handlebars');
+
+const notFound = require('./controllers/pageNotFound');
 
 const app = express();
 
@@ -32,18 +34,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 /*if the url is /user/add-product and /user/product the instead of
 app.use(), use app.use('/admin',adminRoutes)*/
 
-app.use(adminData.router);
+app.use(adminRoutes);
 app.use(shopRoutes);
 
 //handling page not found error
 //after executing all possible routes, this middleware will be executed
 //returns the 404 status code and response
-app.use((req, res, next) => {
-  console.log(req.url);
-  //res.status(404).sendFile(path.join(__dirname, 'views', 'pageNotFound.html'));
-  res
-    .status(404)
-    .render('pageNotFound', { pageTitle: 'Page Not Found', path: req.url });
-});
+app.use(notFound.getNotFound);
 
 app.listen(3000);
