@@ -1,8 +1,23 @@
 const express = require('express');
 const router = express.Router();
 
-const products = require('../controllers/products');
+const shopController = require('../controllers/shop');
 
-router.get('/', products.getProducts);
+router.get('/', shopController.getIndex);
+
+router.get('/products', shopController.getProducts);
+
+//add a route with dynamic param : here productID is the variable we use to capture the dynamic parameter
+router.get('/products/:productID', shopController.getProduct);
+
+router.get('/cart', shopController.getCart);
+
+router.post('/cart', shopController.postCart);
+
+router.post('/cart-delete-item', shopController.postCardDeleteItem);
+
+router.get('/orders', shopController.getOrders);
+
+router.get('/checkout', shopController.getCheckout);
 
 module.exports = router;

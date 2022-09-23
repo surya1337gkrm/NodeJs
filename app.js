@@ -34,7 +34,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 /*if the url is /user/add-product and /user/product the instead of
 app.use(), use app.use('/admin',adminRoutes)*/
 
-app.use(adminRoutes);
+app.use('/admin',adminRoutes);
 app.use(shopRoutes);
 
 //handling page not found error
