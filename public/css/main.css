@@ -206,3 +206,21 @@ form {
 .centered {
   text-align: center;
 }
+
+.image {
+  height: 20rem;
+}
+
+.image img {
+  height: 100%;
+}
+.btn.danger {
+  color: red;
+  border-color: red;
+}
+
+.btn.danger:hover,
+.btn.danger:active {
+  background: red;
+  color: white;
+}
