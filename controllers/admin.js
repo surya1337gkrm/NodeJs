@@ -1,4 +1,5 @@
 const Product = require('../models/product');
+const mongodb = require('mongodb');
 //findByID() in sequelize is replaced with findByPk()
 
 exports.getAddProduct = (req, res) => {
@@ -13,9 +14,24 @@ exports.getAddProduct = (req, res) => {
 
 exports.postAddProduct = (req, res) => {
   const { title, imgUrl, description, price } = req.body;
+  const product = new Product(
+    title,
+    price,
+    description,
+    imgUrl,
+    null,
+    req.user._id
+  );
+  product
+    .save()
+    .then((result) => {
+      console.log('Product added.');
+      res.redirect('/admin/products');
+    })
+    .catch((err) => console.log(err));
   //add userid which we can access for req.user
   /*we can either pass user in the create method or we can use association metjhods like createProduct()
-  createProduct should be called on user sequelize object : user hasMany Products and method 
+  createProduct should be called on user sequelize object : user hasMany Products and method
   is create so sequelize created a method named createProduct */
 
   //method01
@@ -27,22 +43,22 @@ exports.postAddProduct = (req, res) => {
   //   .catch((err) => console.log(err));
 
   //method02
-  req.user
-    .createProduct({
-      title,
-      imgUrl,
-      description,
-      price,
-    })
-    .then((product) => {
-      console.log('Product Created.');
-      res.redirect('/admin/products');
-    })
-    .catch((err) => console.log(err));
+  // req.user
+  //   .createProduct({
+  //     title,
+  //     imgUrl,
+  //     description,
+  //     price,
+  //   })
+  //   .then((product) => {
+  //     console.log('Product Created.');
+  //     res.redirect('/admin/products');
+  //   })
+  //   .catch((err) => console.log(err));
 };
 
 exports.getProducts = (req, res, next) => {
-  req.user.getProducts().then((products) =>
+  Product.fetchAll().then((products) =>
     res.render('admin/products', {
       prods: products,
       pageTitle: 'Admin Products',
@@ -59,37 +75,29 @@ exports.getEditProduct = (req, res, next) => {
   }
   const prodID = req.params.productID;
   //getProducts method provided by sequelize based on the tables & associations defined.
-  req.user
-    .getProducts({
-      where: {
-        id: prodID,
-      },
-    })
-    .then((products) => {
-      const product = products[0];
-      if (!product) {
-        res.redirect('/');
-      }
-      res.render('admin/edit-product', {
-        pageTitle: 'Edit Product',
-        path: req.url,
-        edited: true,
-        product: product,
-      });
+  Product.findById(prodID).then((product) => {
+    if (!product) {
+      res.redirect('/');
+    }
+    res.render('admin/edit-product', {
+      pageTitle: 'Edit Product',
+      path: req.url,
+      edited: true,
+      product: product,
     });
+  });
 };
 
 exports.postEditProduct = (req, res, next) => {
   const { productID, title, imgUrl, description, price } = req.body;
-  Product.findByPk(productID)
-    .then((product) => {
-      product.title = title;
-      product.imgUrl = imgUrl;
-      product.price = price;
-      product.description = description;
-      //save method updates the data in the db and returns a promise
-      return product.save();
-    })
+  new Product(
+    title,
+    price,
+    description,
+    imgUrl,
+    new mongodb.ObjectId(productID)
+  )
+    .save()
     .then((result) => {
       console.log('Updated product');
       res.redirect('/admin/products');
@@ -102,11 +110,8 @@ exports.postDeleteProduct = (req, res, next) => {
   /*delete or destroy any product in the db by passing the query
   Product.destroy({ where: { id: productID } });*/
 
-  Product.findByPk(productID)
-    .then((product) => {
-      return product.destroy();
-    })
-    .then((result) => {
+  Product.deleteProduct(productID)
+    .then(() => {
       console.log('Item Deleted.');
       res.redirect('/admin/products');
     })
