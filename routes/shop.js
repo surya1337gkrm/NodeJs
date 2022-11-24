@@ -7,7 +7,7 @@ router.get('/', shopController.getIndex);
 
 router.get('/products', shopController.getProducts);
 
-//add a route with dynamic param : here productID is the variable we use to capture the dynamic parameter
+// //add a route with dynamic param : here productID is the variable we use to capture the dynamic parameter
 router.get('/products/:productID', shopController.getProduct);
 
 router.get('/cart', shopController.getCart);

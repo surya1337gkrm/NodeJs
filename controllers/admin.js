@@ -14,14 +14,16 @@ exports.getAddProduct = (req, res) => {
 
 exports.postAddProduct = (req, res) => {
   const { title, imgUrl, description, price } = req.body;
-  const product = new Product(
+  const product = new Product({
     title,
-    price,
-    description,
     imgUrl,
-    null,
-    req.user._id
-  );
+    description,
+    price,
+    //we can either pass req.user._id [id specifically] or mongoose will directly take id from the user object we passed.
+    userId: req.user,
+  });
+  //mongoose model Product do have a save method defined
+  //which saves the data to the mongoDB and returns a promise
   product
     .save()
     .then((result) => {
@@ -58,13 +60,21 @@ exports.postAddProduct = (req, res) => {
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.fetchAll().then((products) =>
-    res.render('admin/products', {
-      prods: products,
-      pageTitle: 'Admin Products',
-      path: '/admin/products',
-    })
-  );
+  //select method helps us to select only specific data from the db...
+  //...with speicifying the fields we need and if we dont need any field..
+  //..then specify the field with a hyphen (like if we dont need _id, include -_id)
+  //populate method helps to populate the specified field with all available data for that field
+  Product.find()
+    // .select('title price -_id')
+    // .populate('userId', 'name')
+    .then((products) => {
+      console.log(products);
+      return res.render('admin/products', {
+        prods: products,
+        pageTitle: 'Admin Products',
+        path: '/admin/products',
+      });
+    });
 };
 
 exports.getEditProduct = (req, res, next) => {
@@ -90,14 +100,16 @@ exports.getEditProduct = (req, res, next) => {
 
 exports.postEditProduct = (req, res, next) => {
   const { productID, title, imgUrl, description, price } = req.body;
-  new Product(
-    title,
-    price,
-    description,
-    imgUrl,
-    new mongodb.ObjectId(productID)
-  )
-    .save()
+  //when we use mongoose findById method, mongoose returns a mongoose object instead of JS object as result
+  //this momgoose object will have all mongoose methods like save() etc..
+  Product.findById(productID)
+    .then((product) => {
+      product.title = title;
+      product.imgUrl = imgUrl;
+      product.description = description;
+      product.price = price;
+      return product.save();
+    })
     .then((result) => {
       console.log('Updated product');
       res.redirect('/admin/products');
@@ -110,7 +122,8 @@ exports.postDeleteProduct = (req, res, next) => {
   /*delete or destroy any product in the db by passing the query
   Product.destroy({ where: { id: productID } });*/
 
-  Product.deleteProduct(productID)
+  //mongoose provides findByIdAndRemove method to find & delete an item from db
+  Product.findByIdAndRemove(productID)
     .then(() => {
       console.log('Item Deleted.');
       res.redirect('/admin/products');
