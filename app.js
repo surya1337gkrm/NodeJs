@@ -1,12 +1,15 @@
 const express = require('express');
 const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
+const authRoutes = require('./routes/auth');
 
 const bodyParser = require('body-parser');
 const path = require('path');
 //const expressHbs = require('express-handlebars');
 const notFound = require('./controllers/pageNotFound');
 const mongoose = require('mongoose');
+const session = require('express-session');
+const MongodbStore = require('connect-mongodb-session')(session);
 //const { mongoConnect } = require('./util/database');
 //const User = require('./models/user');
 // const sequelize = require('./util/database');
@@ -18,8 +21,13 @@ const User = require('./models/user');
 // const CartItem = require('./models/cartItem');
 // const Order = require('./models/order');
 // const OrderItem = require('./models/orderItem');
-
+const MONGODB_URI =
+  'mongodb+srv://surya1337:Maddy%401337@cluster0.rzlttud.mongodb.net/shop?retryWrites=true&w=majority';
 const app = express();
+const store = new MongodbStore({
+  uri: MONGODB_URI,
+  collection: 'sessions',
+});
 
 //to use handlebars we need to set the engine first unlike pug
 /*app.engine(
@@ -40,12 +48,25 @@ app.set('views', 'views');
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
+//add session middleware to start a session
+app.use(
+  session({
+    secret: 'My Secret',
+    saveUninitialized: false,
+    resave: false,
+    store: store,
+  })
+);
 
 //creating a middleware to make user accesible across the application
 app.use((req, res, next) => {
-  User.findById('637ea7aaf503adccbe2228cd')
+  if(!req.session.user){
+    //if user isnt found in the session/logged out, then call next so that next code will not work.
+    return next()
+  }
+  User.findById(req.session.user._id)
     .then((user) => {
-      //mongoose returns a mongoose object instead of a js obj which has all methods 
+      //mongoose returns a mongoose object instead of a js obj which has all methods
       req.user = user;
       next();
     })
@@ -60,6 +81,7 @@ app.use(), use app.use('/admin',adminRoutes)*/
 
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
+app.use(authRoutes);
 
 //handling page not found error
 //after executing all possible routes, this middleware will be executed
@@ -73,24 +95,22 @@ app.use(notFound.getNotFound);
 //   app.listen(3000);
 // });
 mongoose
-  .connect(
-    'mongodb+srv://surya1337:Maddy%401337@cluster0.rzlttud.mongodb.net/shop?retryWrites=true&w=majority'
-  )
+  .connect(MONGODB_URI)
   .then((result) => {
     //findOne returns only one user based on the search params.
     //if no args are provided, it will return the first item in the db.
-    User.findOne().then(user=>{
-      if(!user){
-        const user=new User({
-          name:'surya',
-          email:'surya@test.com',
-          cart:{
-            items:[]
-          }
-        })
-        user.save()
+    User.findOne().then((user) => {
+      if (!user) {
+        const user = new User({
+          name: 'surya',
+          email: 'surya@test.com',
+          cart: {
+            items: [],
+          },
+        });
+        user.save();
       }
-    })
+    });
     app.listen(3000);
   })
   .catch((err) => console.log(err));

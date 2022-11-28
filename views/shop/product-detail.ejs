@@ -10,9 +10,11 @@
         </div>
         <h3><%=prod.price%></h3>
         <p><%=prod.description%></p>
-        <form action="/cart" method="POST" >
-            <button class="btn" type="submit">Add to Cart</button>
-            <input type="hidden" name="id" value="<%=prod._id%>">
-        </form>
+        <%if(isAuthenticated){%>
+            <form action="/cart" method="POST" >
+                <button class="btn" type="submit">Add to Cart</button>
+                <input type="hidden" name="id" value="<%=prod._id%>">
+            </form>
+        <%}%>
     </main>
 <%- include('../includes/end.ejs') %>

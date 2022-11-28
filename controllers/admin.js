@@ -9,6 +9,7 @@ exports.getAddProduct = (req, res) => {
     productCSS: true,
     formsCSS: true,
     activeAddProduct: true,
+    isAuthenticated: req.session.loggedIn
   });
 };
 
@@ -73,6 +74,7 @@ exports.getProducts = (req, res, next) => {
         prods: products,
         pageTitle: 'Admin Products',
         path: '/admin/products',
+        isAuthenticated: req.session.loggedIn
       });
     });
 };
@@ -94,6 +96,7 @@ exports.getEditProduct = (req, res, next) => {
       path: req.url,
       edited: true,
       product: product,
+      isAuthenticated: req.session.loggedIn
     });
   });
 };
