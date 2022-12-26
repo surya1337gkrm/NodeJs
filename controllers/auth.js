@@ -8,7 +8,7 @@ const sendgridTransport = require('nodemailer-sendgrid-transport');
 //   sendgridTransport({
 //     auth: {
 //       api_key:
-//         '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',
+//         'Your SendGRID API KEY',
 //     },
 //   })
 // );
@@ -16,8 +16,8 @@ const sendgridTransport = require('nodemailer-sendgrid-transport');
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'vijjanas1@udayton.edu',
-    pass: 'SuryaMaddy1337',
+    user: 'Your Mail ID',
+    pass: 'Your password',
   },
 });
 
