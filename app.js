@@ -10,6 +10,10 @@ const notFound = require('./controllers/pageNotFound');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongodbStore = require('connect-mongodb-session')(session);
+const csrf = require('csurf');
+//we use connect-flash package to add error messages to the session and...
+//...delete the data from the session when the data is used.
+const flash = require('connect-flash');
 //const { mongoConnect } = require('./util/database');
 //const User = require('./models/user');
 // const sequelize = require('./util/database');
@@ -38,7 +42,7 @@ const store = new MongodbStore({
     extname: 'hbs',
   })
 );*/
-
+const csrfProtection = csrf();
 //to use a dynamic html template engines, we need to set the engine name in the config.
 app.set('view engine', 'ejs');
 /*express will check for views/templates in the views directory but
@@ -58,11 +62,16 @@ app.use(
   })
 );
 
+//after initiating the session, we need to use the csrfProtection...
+//...as the package will use this session to configure
+app.use(csrfProtection);
+app.use(flash());
+
 //creating a middleware to make user accesible across the application
 app.use((req, res, next) => {
-  if(!req.session.user){
+  if (!req.session.user) {
     //if user isnt found in the session/logged out, then call next so that next code will not work.
-    return next()
+    return next();
   }
   User.findById(req.session.user._id)
     .then((user) => {
@@ -72,6 +81,16 @@ app.use((req, res, next) => {
     })
     .catch((err) => console.log(err));
   // next();
+});
+
+//in order to add common data to all requests we can add a new middleware
+app.use((req, res, next) => {
+  //on res, we have a property called locals which can be used to add required data...
+  //...that can be fetched by all the views
+  (res.locals.isAuthenticated = req.session.loggedIn),
+    //csrfToken method will be added to each req bcoz of the middleware
+    (res.locals.csrfToken = req.csrfToken()),
+    next();
 });
 
 //importing the routes from routes folder
@@ -99,18 +118,18 @@ mongoose
   .then((result) => {
     //findOne returns only one user based on the search params.
     //if no args are provided, it will return the first item in the db.
-    User.findOne().then((user) => {
-      if (!user) {
-        const user = new User({
-          name: 'surya',
-          email: 'surya@test.com',
-          cart: {
-            items: [],
-          },
-        });
-        user.save();
-      }
-    });
+    // User.findOne().then((user) => {
+    //   if (!user) {
+    //     const user = new User({
+    //       name: 'surya',
+    //       email: 'surya@test.com',
+    //       cart: {
+    //         items: [],
+    //       },
+    //     });
+    //     user.save();
+    //   }
+    // });
     app.listen(3000);
   })
   .catch((err) => console.log(err));

@@ -9,7 +9,7 @@ exports.getProducts = (req, res, next) => {
       prods: products,
       pageTitle: 'Products',
       path: '/products',
-      isAuthenticated: req.session.loggedIn
+      isAuthenticated: req.session.loggedIn,
     })
   );
 };
@@ -20,7 +20,6 @@ exports.getIndex = (req, res, next) => {
       prods: products,
       pageTitle: 'Shop',
       path: '/',
-      isAuthenticated: req.session.loggedIn
     })
   );
 };
@@ -37,7 +36,7 @@ exports.getProduct = (req, res, next) => {
         pageTitle: product.title,
         path: req.url,
         prod: product,
-        isAuthenticated: req.session.loggedIn
+        isAuthenticated: req.session.loggedIn,
       });
     })
     .catch((err) => console.log(err));
@@ -55,7 +54,7 @@ exports.getCart = (req, res, next) => {
         path: '/cart',
         pageTitle: 'Your Cart',
         products: products,
-        isAuthenticated: req.session.loggedIn
+        isAuthenticated: req.session.loggedIn,
       });
     })
 
@@ -79,7 +78,7 @@ exports.postCartDeleteItem = (req, res, next) => {
 };
 
 exports.postOrder = (req, res, next) => {
- req.user
+  req.user
     .populate('cart.items.productId')
     .then((user) => {
       console.log(user.cart.items);
@@ -89,7 +88,7 @@ exports.postOrder = (req, res, next) => {
         return { quantity: el.quantity, product: { ...el.productId._doc } };
       });
       const order = new Order({
-        user: { name:req.user.name, userId:req.user._id },
+        user: { email: req.user.email, userId: req.user._id },
         products: products,
       });
       return order.save();
@@ -108,7 +107,7 @@ exports.getOrders = (req, res, next) => {
       pageTitle: 'Your Orders',
       path: req.url,
       orders: orders,
-      isAuthenticated: req.session.loggedIn
+      isAuthenticated: req.session.loggedIn,
     });
   });
 };
