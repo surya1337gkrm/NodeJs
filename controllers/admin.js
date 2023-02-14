@@ -1,15 +1,20 @@
 const Product = require('../models/product');
 const mongodb = require('mongodb');
+const { validationResult } = require('express-validator');
 //findByID() in sequelize is replaced with findByPk()
 
 exports.getAddProduct = (req, res) => {
   res.render('admin/add-product', {
     pageTitle: 'Add-Product',
     path: '/admin/add-product',
-    productCSS: true,
-    formsCSS: true,
-    activeAddProduct: true,
-    isAuthenticated: req.session.loggedIn
+    product: {
+      title: '',
+      imgUrl: '',
+      price: '',
+      description: '',
+    },
+    errorMessage: '',
+    validationErrors: [],
   });
 };
 
@@ -23,6 +28,16 @@ exports.postAddProduct = (req, res) => {
     //we can either pass req.user._id [id specifically] or mongoose will directly take id from the user object we passed.
     userId: req.user,
   });
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render('admin/add-product', {
+      pageTitle: 'Add-Product',
+      path: '/admin/add-product',
+      errorMessage: errors.array()[0].msg,
+      product: { title, imgUrl, description, price },
+      validationErrors: errors.array(),
+    });
+  }
   //mongoose model Product do have a save method defined
   //which saves the data to the mongoDB and returns a promise
   product
@@ -65,7 +80,7 @@ exports.getProducts = (req, res, next) => {
   //...with speicifying the fields we need and if we dont need any field..
   //..then specify the field with a hyphen (like if we dont need _id, include -_id)
   //populate method helps to populate the specified field with all available data for that field
-  Product.find()
+  Product.find({ userId: req.user._id })
     // .select('title price -_id')
     // .populate('userId', 'name')
     .then((products) => {
@@ -74,7 +89,7 @@ exports.getProducts = (req, res, next) => {
         prods: products,
         pageTitle: 'Admin Products',
         path: '/admin/products',
-        isAuthenticated: req.session.loggedIn
+        isAuthenticated: req.session.loggedIn,
       });
     });
 };
@@ -96,27 +111,42 @@ exports.getEditProduct = (req, res, next) => {
       path: req.url,
       edited: true,
       product: product,
-      isAuthenticated: req.session.loggedIn
+      errorMessage: '',
+      validationErrors: [],
     });
   });
 };
 
 exports.postEditProduct = (req, res, next) => {
   const { productID, title, imgUrl, description, price } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).render('admin/edit-product', {
+      pageTitle: 'Add-Product',
+      path: '/admin/edit-product',
+      errorMessage: errors.array()[0].msg,
+      product: { title, imgUrl, description, price, _id: productID },
+      edited: true,
+      validationErrors: errors.array(),
+    });
+  }
   //when we use mongoose findById method, mongoose returns a mongoose object instead of JS object as result
   //this momgoose object will have all mongoose methods like save() etc..
   Product.findById(productID)
     .then((product) => {
+      if (product.userId.toString() !== req.user._id.toString()) {
+        return res.redirect('/');
+      }
       product.title = title;
       product.imgUrl = imgUrl;
       product.description = description;
       product.price = price;
-      return product.save();
+      return product.save().then((result) => {
+        console.log('Updated product');
+        res.redirect('/admin/products');
+      });
     })
-    .then((result) => {
-      console.log('Updated product');
-      res.redirect('/admin/products');
-    })
+
     .catch((err) => console.log(err));
 };
 
@@ -126,7 +156,9 @@ exports.postDeleteProduct = (req, res, next) => {
   Product.destroy({ where: { id: productID } });*/
 
   //mongoose provides findByIdAndRemove method to find & delete an item from db
-  Product.findByIdAndRemove(productID)
+  //or we can use deleteOne method
+  // Product.findByIdAndRemove(productID)
+  Product.deleteOne({ _id: productID, userId: req.user._id })
     .then(() => {
       console.log('Item Deleted.');
       res.redirect('/admin/products');

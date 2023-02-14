@@ -87,10 +87,10 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   //on res, we have a property called locals which can be used to add required data...
   //...that can be fetched by all the views
-  (res.locals.isAuthenticated = req.session.loggedIn),
-    //csrfToken method will be added to each req bcoz of the middleware
-    (res.locals.csrfToken = req.csrfToken()),
-    next();
+  res.locals.isAuthenticated = req.session.loggedIn;
+  //csrfToken method will be added to each req bcoz of the middleware
+  res.locals.csrfToken = req.csrfToken();
+  next();
 });
 
 //importing the routes from routes folder
