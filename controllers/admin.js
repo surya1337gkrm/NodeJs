@@ -46,7 +46,17 @@ exports.postAddProduct = (req, res) => {
       console.log('Product added.');
       res.redirect('/admin/products');
     })
-    .catch((err) => console.log(err));
+    .catch((err) => {
+      //we can either call an erorr page by redirecting the page to error route as follows
+      //res.redirect('/500')
+      //(or)
+      //we can wrap the err using Error class and use the middleware.
+      const error = new Error(err);
+      error.httpStatusCode = 500;
+      //when we use next() middleware fn and pass the error object as parameter,...
+      //...express will catch this error immediately and executes the middleware function associated to it.
+      return next(error);
+    });
   //add userid which we can access for req.user
   /*we can either pass user in the create method or we can use association metjhods like createProduct()
   createProduct should be called on user sequelize object : user hasMany Products and method

@@ -21,6 +21,7 @@ const flash = require('connect-flash');
 // //importing the models to create the realtions between tables
 const Product = require('./models/product');
 const User = require('./models/user');
+const { readdir } = require('fs');
 // const Cart = require('./models/cart');
 // const CartItem = require('./models/cartItem');
 // const Order = require('./models/order');
@@ -67,22 +68,6 @@ app.use(
 app.use(csrfProtection);
 app.use(flash());
 
-//creating a middleware to make user accesible across the application
-app.use((req, res, next) => {
-  if (!req.session.user) {
-    //if user isnt found in the session/logged out, then call next so that next code will not work.
-    return next();
-  }
-  User.findById(req.session.user._id)
-    .then((user) => {
-      //mongoose returns a mongoose object instead of a js obj which has all methods
-      req.user = user;
-      next();
-    })
-    .catch((err) => console.log(err));
-  // next();
-});
-
 //in order to add common data to all requests we can add a new middleware
 app.use((req, res, next) => {
   //on res, we have a property called locals which can be used to add required data...
@@ -91,6 +76,30 @@ app.use((req, res, next) => {
   //csrfToken method will be added to each req bcoz of the middleware
   res.locals.csrfToken = req.csrfToken();
   next();
+});
+
+//creating a middleware to make user accesible across the application
+app.use((req, res, next) => {
+  //if we throw a new error in synchronous places, express will catch these errors and reach to the error handling middleware
+  //but if we throw errors in asynchronous places like in promises (then/catch) it will not work
+  //so in those places, we need to call next with the error object.
+  if (!req.session.user) {
+    //if user isnt found in the session/logged out, then call next so that next code will not work.
+    return next();
+  }
+  User.findById(req.session.user._id)
+    .then((user) => {
+      //mongoose returns a mongoose object instead of a js obj which has all methods
+      if (!user) {
+        return next();
+      }
+      req.user = user;
+      next();
+    })
+    .catch((err) => {
+      res.redirect('/500');
+    });
+  // next();
 });
 
 //importing the routes from routes folder
@@ -102,11 +111,17 @@ app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
 
+app.get('/500', notFound.get500);
+
 //handling page not found error
 //after executing all possible routes, this middleware will be executed
 //returns the 404 status code and response
 app.use(notFound.getNotFound);
 
+//This middleware will be automatically called when next() is called with an error object.
+app.use((error, req, res, next) => {
+  return res.redirect('/500');
+});
 //creating the relations
 //each produt will be created by an user
 

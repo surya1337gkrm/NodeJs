@@ -8,3 +8,11 @@ exports.getNotFound = (req, res, next) => {
       isAuthenticated: req.session.loggedIn,
     });
 };
+
+
+exports.get500=(req,res,next)=>{
+  res.status(500).render('error500',{
+    pageTitle:'Error',
+    path:req.url,
+  })
+}
