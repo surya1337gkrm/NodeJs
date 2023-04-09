@@ -18,7 +18,7 @@ router.post(
       .trim()
       .isString()
       .isLength({ min: 3 }),
-    body('imgUrl').isURL().withMessage('Enter a valid URL.'),
+    // body('imgUrl').isURL().withMessage('Enter a valid URL.'),
     body('price', 'Enter a valid Float value.').isFloat(),
     body('description', 'Enter a valid string with minimum 5 charecters.')
       .trim()
@@ -38,7 +38,7 @@ router.post(
       .trim()
       .isString()
       .isLength({ min: 3 }),
-    body('imgUrl').isURL().withMessage('Enter a valid URL.'),
+    // body('imgUrl').isURL().withMessage('Enter a valid URL.'),
     body('price', 'Enter a valid Float value.').isFloat(),
     body('description', 'Enter a valid string with minimum 5 charecters.')
       .trim()

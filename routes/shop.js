@@ -11,14 +11,16 @@ router.get('/products', shopController.getProducts);
 // //add a route with dynamic param : here productID is the variable we use to capture the dynamic parameter
 router.get('/products/:productID', shopController.getProduct);
 
-router.get('/cart',isAuth, shopController.getCart);
+router.get('/cart', isAuth, shopController.getCart);
 
-router.post('/cart',isAuth, shopController.postCart);
+router.post('/cart', isAuth, shopController.postCart);
 
-router.post('/cart-delete-item',isAuth, shopController.postCartDeleteItem);
+router.post('/cart-delete-item', isAuth, shopController.postCartDeleteItem);
 
-router.get('/orders',isAuth, shopController.getOrders);
+router.get('/orders', isAuth, shopController.getOrders);
 
-router.post('/create-order',isAuth, shopController.postOrder);
+router.post('/create-order', isAuth, shopController.postOrder);
+
+router.get('/orders/:orderId', isAuth, shopController.getInvoice);
 
 module.exports = router;

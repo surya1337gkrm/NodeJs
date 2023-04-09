@@ -4,6 +4,7 @@ const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
 
 const bodyParser = require('body-parser');
+const multer = require('multer');
 const path = require('path');
 //const expressHbs = require('express-handlebars');
 const notFound = require('./controllers/pageNotFound');
@@ -21,7 +22,6 @@ const flash = require('connect-flash');
 // //importing the models to create the realtions between tables
 const Product = require('./models/product');
 const User = require('./models/user');
-const { readdir } = require('fs');
 // const Cart = require('./models/cart');
 // const CartItem = require('./models/cartItem');
 // const Order = require('./models/order');
@@ -43,7 +43,7 @@ const store = new MongodbStore({
     extname: 'hbs',
   })
 );*/
-const csrfProtection = csrf();
+
 //to use a dynamic html template engines, we need to set the engine name in the config.
 app.set('view engine', 'ejs');
 /*express will check for views/templates in the views directory but
@@ -52,7 +52,51 @@ add the directory where we stored the templates*/
 app.set('views', 'views');
 
 app.use(bodyParser.urlencoded({ extended: false }));
+//to check the incoming requests and look for multipart form data [ with file inputs]...
+//...config multer - handles a single file with name 'image' and stores the input data...
+//...in the destinator folder images/ [ if ther isnt any, it will create]
+
+//using dest property will only create binary files at the given folder.
+//to store the files with the original name/with extension use storage property and configure.
+// app.use(multer({ dest: 'images' }).single('image'));
+const fileStorage = multer.diskStorage({
+  //req has all info about the incoming request
+  //file will have all data about the incoming file
+  //use callback cb to do operations
+  destination: (req, file, cb) => {
+    //cb will take 2 params. error & destination path
+    //when using storage instead of dest, create images folder manually and also new Date.toISOString() doesnt work
+    cb(null, 'images');
+  },
+  filename: (req, file, cb) => {
+    //cb will take 2 params, error & filename
+    //use file param to get the details about the incoming file
+    //for uniqueness, use any unique string before filename
+    cb(null, Date.now() + '-' + file.originalname);
+  },
+});
+
+//to filter filetype add filetype property
+const fileFilter = (req, file, cb) => {
+  //write own logic to filter filetype based on mimetype and...
+  //...pass econd param as true to accept the file or falase to reject the file.
+  if (
+    file.mimetype === 'image/jpg' ||
+    file.mimetype === 'image/jpeg' ||
+    file.mimetype === 'image/png'
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single('image')
+);
+const csrfProtection = csrf();
 app.use(express.static(path.join(__dirname, 'public')));
+//serve images from images folder if the incoming request starts with /images
+app.use('/images', express.static(path.join(__dirname, 'images')));
 //add session middleware to start a session
 app.use(
   session({

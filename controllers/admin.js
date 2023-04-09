@@ -1,6 +1,7 @@
 const Product = require('../models/product');
 const mongodb = require('mongodb');
 const { validationResult } = require('express-validator');
+const fileHelper = require('../util/file');
 //findByID() in sequelize is replaced with findByPk()
 
 exports.getAddProduct = (req, res) => {
@@ -9,7 +10,6 @@ exports.getAddProduct = (req, res) => {
     path: '/admin/add-product',
     product: {
       title: '',
-      imgUrl: '',
       price: '',
       description: '',
     },
@@ -18,12 +18,31 @@ exports.getAddProduct = (req, res) => {
   });
 };
 
-exports.postAddProduct = (req, res) => {
-  const { title, imgUrl, description, price } = req.body;
+exports.postAddProduct = (req, res, next) => {
+  //default encoding type for a form will be x-www-urlencoded in which data from the from  will be sent along with the
+  //url as text. if we want to send a binary data like image etc... it will not work.
+  //for that to work, we need to use encoding type as multipart/form-data
+  // const { title, imgUrl, description, price } = req.body;
+  const title = req.body.title;
+  //instead of reading data from req.body, check in req.file - incoming input file...
+  //will be received in a binary format.
+  const image = req.file;
+  const description = req.body.description;
+  const price = req.body.price;
+  if (!image) {
+    return res.status(422).render('admin/edit-product', {
+      pageTitle: 'Add-Product',
+      path: '/admin/add-product',
+      errorMessage: 'Attached file is not an image.',
+      product: { title, description, price },
+      validationErrors: [],
+    });
+  }
+
   const product = new Product({
     title,
-    imgUrl,
     description,
+    imgUrl: image.path,
     price,
     //we can either pass req.user._id [id specifically] or mongoose will directly take id from the user object we passed.
     userId: req.user,
@@ -34,7 +53,7 @@ exports.postAddProduct = (req, res) => {
       pageTitle: 'Add-Product',
       path: '/admin/add-product',
       errorMessage: errors.array()[0].msg,
-      product: { title, imgUrl, description, price },
+      product: { title, description, price },
       validationErrors: errors.array(),
     });
   }
@@ -94,7 +113,6 @@ exports.getProducts = (req, res, next) => {
     // .select('title price -_id')
     // .populate('userId', 'name')
     .then((products) => {
-      console.log(products);
       return res.render('admin/products', {
         prods: products,
         pageTitle: 'Admin Products',
@@ -128,14 +146,15 @@ exports.getEditProduct = (req, res, next) => {
 };
 
 exports.postEditProduct = (req, res, next) => {
-  const { productID, title, imgUrl, description, price } = req.body;
+  const { productID, title, description, price } = req.body;
+  const image = req.file;
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).render('admin/edit-product', {
       pageTitle: 'Add-Product',
       path: '/admin/edit-product',
       errorMessage: errors.array()[0].msg,
-      product: { title, imgUrl, description, price, _id: productID },
+      product: { title, description, price, _id: productID },
       edited: true,
       validationErrors: errors.array(),
     });
@@ -148,8 +167,12 @@ exports.postEditProduct = (req, res, next) => {
         return res.redirect('/');
       }
       product.title = title;
-      product.imgUrl = imgUrl;
       product.description = description;
+      //only update the image only if provided, or use previous image
+      if (image) {
+        fileHelper.deletFile(product.imgUrl);
+        product.imgUrl = image.path;
+      }
       product.price = price;
       return product.save().then((result) => {
         console.log('Updated product');
@@ -164,11 +187,18 @@ exports.postDeleteProduct = (req, res, next) => {
   const { productID } = req.body;
   /*delete or destroy any product in the db by passing the query
   Product.destroy({ where: { id: productID } });*/
+  Product.findById(productID)
+    .then((product) => {
+      if (!product) {
+        return next(new Error('Product not found'));
+      }
+      fileHelper.deletFile(product.imgUrl);
+      return Product.deleteOne({ _id: productID, userId: req.user._id });
+    })
 
-  //mongoose provides findByIdAndRemove method to find & delete an item from db
-  //or we can use deleteOne method
-  // Product.findByIdAndRemove(productID)
-  Product.deleteOne({ _id: productID, userId: req.user._id })
+    //mongoose provides findByIdAndRemove method to find & delete an item from db
+    //or we can use deleteOne method
+    // Product.findByIdAndRemove(productID)
     .then(() => {
       console.log('Item Deleted.');
       res.redirect('/admin/products');
