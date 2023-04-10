@@ -5,26 +5,60 @@ const fs = require('fs');
 const path = require('path');
 const pdfDocument = require('pdfkit');
 
+const ITEMS_PER_PAGE = 1;
+
 exports.getProducts = (req, res, next) => {
   //find method in mongoose will return array instead of cursor like with mongodb package
-  Product.find().then((products) =>
-    res.render('shop/product-list', {
-      prods: products,
-      pageTitle: 'Products',
-      path: '/products',
-      isAuthenticated: req.session.loggedIn,
+  const page = +req.query.page || 1;
+  let totalItems;
+  Product.find()
+    .countDocuments()
+    .then((numOfProducts) => {
+      totalItems = numOfProducts;
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE);
     })
-  );
+    .then((products) =>
+      res.render('shop/product-list', {
+        prods: products,
+        pageTitle: 'Products',
+        path: '/products',
+        isAuthenticated: req.session.loggedIn,
+        currentPage: page,
+        hasNextPage: totalItems > page * ITEMS_PER_PAGE,
+        hasPreviousPage: page > 1,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
+      })
+    );
 };
 
 exports.getIndex = (req, res, next) => {
-  Product.find().then((products) =>
-    res.render('shop/index', {
-      prods: products,
-      pageTitle: 'Shop',
-      path: '/',
+  const page = +req.query.page || 1;
+  let totalItems;
+  Product.find()
+    .countDocuments()
+    .then((numOfProducts) => {
+      totalItems = numOfProducts;
+      return Product.find()
+        .skip((page - 1) * ITEMS_PER_PAGE)
+        .limit(ITEMS_PER_PAGE);
     })
-  );
+    .then((products) =>
+      res.render('shop/index', {
+        prods: products,
+        pageTitle: 'Shop',
+        path: '/',
+        currentPage: page,
+        hasNextPage: totalItems > page * ITEMS_PER_PAGE,
+        hasPreviousPage: page > 1,
+        nextPage: page + 1,
+        previousPage: page - 1,
+        lastPage: Math.ceil(totalItems / ITEMS_PER_PAGE),
+      })
+    );
 };
 
 exports.getProduct = (req, res, next) => {
